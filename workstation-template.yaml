@@ -1,4 +1,4 @@
-```yaml
+
 # ============================================================
 # 工作站工具链配置模板 (Workstation Toolchain Template)
 # 用途：让 AI 协助审计、规划、迁移一台 Windows 工作站的软件与目录
@@ -355,4 +355,4 @@ software:
   - id: pecofence
     name: pecofence
     note: 开源的桌面整理与分类工具
-```
+
