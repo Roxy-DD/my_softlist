@@ -1,3 +1,4 @@
+```yaml
 # ============================================================
 # 工作站工具链配置模板 (Workstation Toolchain Template)
 # 用途：让 AI 协助审计、规划、迁移一台 Windows 工作站的软件与目录
@@ -6,7 +7,7 @@
 # ============================================================
 
 meta:
-  template_version: "1.0"
+  template_version: "1.1"
   purpose: "管理常用软件与开发环境；可从我给的清单出发，也可先识别本机已有软件再生成清单，用于新机配置与工作站迁移"
   mode: from_list            # from_list=我提供清单 / from_scan=先让 AI 识别本机软件，再生成清单
   platform: windows
@@ -240,6 +241,19 @@ software:
     note: 浏览器
     data_paths: ["书签、扩展列表、账号同步设置"]
 
+  - id: rustdesk
+    name: RustDesk
+    note: 开源远程桌面与远程控制工具，支持局域网直连
+    data_paths: ["客户端配置、设备地址簿、连接设置（密钥等敏感信息单独保管）"]
+
+  # --- 网络基础设施 ---
+  - id: caddy
+    name: Caddy
+    note: 独立运行的 Web 服务器与反向代理基础设施，用于统一管理本机及局域网服务的域名与端口映射；不使用容器部署
+    install_mode: portable
+    path_policy: custom
+    data_paths: ["Caddyfile 配置文件", "Caddy 数据目录（证书及运行状态）", "服务日志"]
+
   # --- 开发基础 ---
   - id: git
     name: Git
@@ -335,3 +349,4 @@ software:
   - id: pecofence
     name: pecofence
     note: 开源的桌面整理与分类工具
+```
