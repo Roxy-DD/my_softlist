@@ -253,7 +253,13 @@ software:
     install_mode: portable
     path_policy: custom
     data_paths: ["Caddyfile 配置文件", "Caddy 数据目录（证书及运行状态）", "服务日志"]
-
+  
+  # --- 文件压缩 ---
+  - id: 7zip
+    name: 7-Zip
+    note: 开源文件压缩与解压工具，支持 7z、ZIP、RAR 等格式
+    data_paths: ["文件管理器右键菜单集成设置", "软件配置"]
+  
   # --- 开发基础 ---
   - id: git
     name: Git
