@@ -316,6 +316,14 @@ software:
     note: 代码编辑器
     data_paths: ["settings.json", "keymap", "扩展列表"]
 
+  # --- 架构设计与可视化 ---
+  - id: openflowkit
+    name: OpenFlowKit
+    note: 开源、本地优先的技术架构图与可视化画布，支持 Mermaid、D2、Structurizr、OpenFlow DSL、GitHub 仓库架构映射及 MCP Agent 集成
+    install_mode: package-manager
+    path_policy: custom
+    data_paths: ["浏览器本地存储的图表与文档", ".ofk 架构图文件", ".openflow.json 文档"]
+  
   # --- 效率与笔记 ---
   - id: motrix-next
     name: Motrix Next
