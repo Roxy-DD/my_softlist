@@ -267,6 +267,15 @@ software:
     required: true
     data_paths: [".gitconfig", "SSH key"]
 
+  - id: lean4
+    name: Lean 4
+    note: 形式化证明语言与定理证明器；通过 Elan 管理 Lean 工具链版本，Lake 随工具链提供，用于项目构建和依赖管理；支持 CLI 独立使用，不依赖 VS Code
+    required: true
+    install_mode: installer
+    path_policy: custom
+    depends_on: [git]
+    data_paths: ["Lean 项目配置（lean-toolchain、lakefile.lean/toml、lake-manifest.json）"]
+
   - id: powershell7
     name: PowerShell 7
     note: 跨平台 PowerShell（不是系统自带的 Windows PowerShell 5.1）
