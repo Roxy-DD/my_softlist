@@ -1,0 +1,381 @@
+
+# ============================================================
+# 工作站工具链配置模板 (Workstation Toolchain Template)
+# 用途：让 AI 协助审计、规划、迁移一台 Windows 工作站的软件与目录
+# 使用：复制本文件 → 改 vars / software → 整份发给 AI
+# 分区：meta(说明) / agent(流程) / vars(目录) / policies(规则) / software_defaults(默认值) / software(清单)
+# ============================================================
+
+meta:
+  template_version: "1.1"
+  purpose: "管理常用软件与开发环境；可从我给的清单出发，也可先识别本机已有软件再生成清单，用于新机配置与工作站迁移"
+  mode: from_list            # from_list=我提供清单 / from_scan=先让 AI 识别本机软件，再生成清单
+  platform: windows
+  language: zh-CN
+  # 当前阶段由 AI 在你确认后更新，换会话时据此续接
+  state:
+    current_phase: 0          # 0=预检 0.5=识别本机软件 1=审计 2=目录规划 3=下载清单 4=可选下载 5=完成
+    scan_confirmed: false     # 仅 from_scan 模式使用
+    phase1_confirmed: false
+    phase2_confirmed: false
+    download_choice: ""       # ask=待询问 / yes / no / partial，由 AI 在我选择后填写
+
+# ------------------------------------------------------------
+# agent：流程指令（只读，AI 不得修改本段）
+# ------------------------------------------------------------
+agent:
+  role: "Windows 工具链清单助手，严格按固定流程执行"
+
+  inputs: "本文件的 vars、policies、software_defaults、software 为数据，agent 段为指令，不要混淆；software 条目省略的字段，取 software_defaults 里的值"
+
+  capability_boundary: |
+    - 能联网搜索就搜索；不能联网时明说，并把需联网确认的项标为 unknown。
+    - 不能访问我本机文件时，只基于本文件内容工作，不假设本机已装什么。
+    - 识别本机软件需要本机访问权限；没有时，给我一条只读命令，由我运行并把输出贴回来。
+    - 做不到的事直接说明，退化为"只输出清单"，不要编造。
+
+  principles:
+    - "所有结论附来源链接和日期；没有来源的标 unknown，禁止编造版本号和 URL"
+    - "下载链接优先官方域名；找不到官方链接则写 unknown"
+    - "不自动运行安装程序、不写部署脚本"
+    - "识别本机软件是只读操作：只记录软件名，不记录版本号，不修改、不卸载任何东西"
+    - "下载安装包是可选项：只有我明确选择「要」之后才下载，默认不下载"
+    - "必须等上一阶段我明确确认，才进入下一阶段"
+    - "我可以随时说「回到阶段N」，AI 从该阶段重新开始，后续阶段的确认状态作废"
+    - "我的确认可以很简短（如「按你说的」、「Motrix 保留，其余照做」），AI 复述一遍理解再执行"
+    - "只改我要求改的部分；不改 agent 段，不删我的注释"
+    - "输出简洁，分阶段汇报"
+
+  phases:
+    phase0_preflight:
+      goal: "预检（一次完成，不超过 5 行汇报）"
+      steps:
+        - "读取 meta.state，从对应阶段续接，不从头开始"
+        - "自检能力：能否联网搜索、能否下载文件、能否写文件（决定后面能做到哪一步）"
+        - "提醒我确认 vars 里的盘符存在、空间足够（见 policies.check_drive_exists_and_space）"
+        - "找出清单里信息不全的条目（如浏览器没指定名称、note 含糊），一次性列出来问我"
+
+    phase0b_scan:
+      run_when: "meta.mode 为 from_scan，或我说「先帮我识别本机软件」"
+      goal: "识别本机已有软件（只要软件名，不要版本），生成 software 清单草稿"
+      steps:
+        - "按 policies.scan.sources 获取本机软件名：有本机访问权限就只读扫描；没有就把 policies.scan.manual_command 给我，由我运行后贴回输出"
+        - "只记录软件名，不记录版本号；默认也不记录旧安装路径（见 policies.scan.record_old_install_path）"
+        - "去重并过滤噪音，分成四类：用户软件 / 运行库与依赖 / 驱动与系统组件 / 不确定"
+        - "草稿只放「用户软件」和我点名的其他项；其余三类列给我看，由我挑要不要"
+        - "问我有没有不在系统卸载列表里的便携软件（绿色版）及其所在文件夹，有就让我给名单或路径"
+        - "为每个条目生成草稿字段：id、name、note（消除歧义）、category、install_mode、path_policy、depends_on、data_paths（data_paths 标注为建议，待我确认）"
+        - "展示草稿，等我确认；确认后只更新 software 段，其余原样保留，写入前先展示 diff"
+        - "确认后只问我一句：只生成配置文件就结束 / 继续走审计和目录规划"
+      on_confirm: "meta.state.scan_confirmed 置 true"
+      on_choice_only_config: "交付更新后的 YAML，流程结束；不进入阶段1和之后的阶段"
+
+    phase1_audit:
+      precondition: "software 清单非空；from_scan 模式下 scan_confirmed 为 true"
+      goal: "工具链路审计与确认"
+      steps:
+        - "识别并划分软件场景分类，写入各条目的 category 字段（分类一旦确认，后续复用，不再漂移）"
+        - "逐个检查：是否停更（标准见 policies.stale_after_months）、有无重大缺陷、最新版本状态"
+        - "对 managed_by 非空的条目，核实管理工具确实支持安装该软件；不支持就提示我改成独立安装"
+        - "工具链整合审计（policies.toolchain_consolidation.enabled 为 true 时）：识别开发类软件，判断哪些可由主管理工具统一安装；功能重叠的管理工具也一并指出"
+        - "整合建议单独成表：软件 / 现状 / 能否并入 / 并入后的好处与代价 / 验证依据与来源；只是建议，改成 managed_by 需我确认"
+        - "调研生态，找能覆盖原工具且更适合本工作流的新工具，每个建议附对比理由（数量上限见 policies.max_alternatives_per_tool）"
+        - "输出变更方案：保留 / 建议移除 / 建议新增 / 建议替换"
+        - "展示方案，等我确认最终软件列表"
+      report_columns: [软件, 分类, 最新版本, 维护状态, 结论, 理由, 来源与日期]
+      on_confirm: "复述最终清单，将 meta.state.phase1_confirmed 置 true"
+
+    phase2_dirs:
+      precondition: "phase1_confirmed 为 true"
+      goal: "目录规划评估与确认"
+      steps:
+        - "目录不沿用本机旧安装路径：无论清单是手写的还是识别出来的，都基于最终软件清单重新建议"
+        - "基于最终软件清单评估当前 vars，给出优化方案：盘符、根目录、子文件夹划分"
+        - "我也可以选择沿用现有 vars、不做规划，那就跳过本阶段"
+        - "检查 policies.path_policy：不支持自定义路径的软件不强行重定向，并说明"
+        - "列出需要重定向的环境变量（vars.env_redirects）"
+        - "managed_by 非空的软件不单独分配安装目录，跟随管理工具的目录（如 MISE_DATA_DIR）"
+        - "整合后输出 PATH 影响说明：整合前后新增到 PATH 的目录对比；vars.env_redirects 只保留仍然需要的"
+        - "输出新的 vars 方案和规划理由，向我确认"
+        - "收到确认后：只更新 software 和 vars 两段，其余原样保留；写入前先展示 diff 让我确认"
+      on_confirm: "将 meta.state.phase2_confirmed 置 true（我选择跳过本阶段时也置 true）"
+
+    phase3_download_list:
+      precondition: "phase2_confirmed 为 true 且 YAML 已更新"
+      goal: "生成有序下载清单（只出清单，不下载）"
+      steps:
+        - "按 depends_on 做拓扑排序，决定下载与安装先后"
+        - "managed_by 非空的软件：自动排在其管理工具之后；清单里「官方链接」一栏写「由 <工具> 安装」，不找下载链接"
+        - "主管理工具的备注里提醒：安装后需要配置 shell 激活或 shims，PATH 才会生效（具体做法按官方文档，并附来源）"
+        - "按顺序输出清单，建议文件名按 policies.download.naming_pattern"
+        - "额外附：每个软件的 data_paths 备份提醒"
+        - "清单输出完后，只问我一句：要不要帮你下载？选项：要 / 不要，我自己下 / 只下载部分"
+        - "若 capability_boundary 判定做不到下载，则不问这一句，直接说明原因，清单供我手动下载"
+      list_columns: [序号, 软件, note, 前置依赖, 官方链接, 建议文件名, 备注]
+
+    phase4_optional_download:
+      precondition: "我在阶段3末尾选择了「要」或「只下载部分」"
+      goal: "按清单顺序下载并重命名安装包"
+      steps:
+        - "按清单顺序下载到 vars.DOWNLOAD_ROOT；managed_by 非空的软件跳过，不下载"
+        - "每个文件按 naming_pattern 重命名，如 01_7zip.exe"
+        - "官方提供校验值（SHA256 等）时核对；没有则注明未校验"
+        - "下载失败的项不卡住流程：跳过并记录，最后集中列出，让我手动处理"
+        - "结束后汇报：成功 / 失败 / 未校验 的文件清单（序号 + 文件名 + 大小）"
+        - "不运行任何安装程序；安装由我按序号手动进行"
+      on_choice_no: "我选「不要」：流程到此结束，meta.state.download_choice 置 no，清单留给我自己用"
+
+# ------------------------------------------------------------
+# vars：目录规划（存放软件本体、缓存、项目工程、安装包、备份）
+# ------------------------------------------------------------
+vars:
+  APP_ROOT: "D:/Apps"              # 软件本体
+  CACHE_ROOT: "D:/Cache"           # 各类缓存
+  WORKSPACE_ROOT: "D:/Workspaces"  # 项目工程
+  DOWNLOAD_ROOT: "D:/Downloads/installers"  # 安装包存放
+  BACKUP_ROOT: "D:/Backup"         # 软件配置与数据备份
+
+  # 需要重定向的环境变量（Phase 2 由 AI 评估是否采用）
+  # 候选项；只对清单里实际有的软件生效。
+  # 开发工具本体由 mise 安装，下列变量管的是各工具自己的全局数据与缓存位置。
+  env_redirects:
+    RUSTUP_HOME: "{APP_ROOT}/rustup"
+    CARGO_HOME: "{APP_ROOT}/cargo"
+    MISE_DATA_DIR: "{APP_ROOT}/mise"
+    MISE_CACHE_DIR: "{CACHE_ROOT}/mise"
+    PIXI_HOME: "{APP_ROOT}/pixi"
+    PIXI_CACHE_DIR: "{CACHE_ROOT}/pixi"
+    BUN_INSTALL: "{APP_ROOT}/bun"
+
+  # 子文件夹约定：{APP_ROOT}/<软件id>/  {CACHE_ROOT}/<软件id>/
+  subfolder_convention: "<root>/<software.id>/"
+
+# ------------------------------------------------------------
+# policies：判定规则（可按需调整）
+# ------------------------------------------------------------
+policies:
+  stale_after_months: 12             # 超过此时间无 release 视为停更
+  max_alternatives_per_tool: 2       # 每个软件最多建议几个替代
+  alternatives_are_suggestions_only: true
+  path_policy:
+    custom: "支持自定义安装路径，按 vars 规划"
+    forced_default: "不支持改路径，保持默认并说明"
+  check_drive_exists_and_space: true # 规划前提醒我确认盘符存在、空间足够
+  toolchain_consolidation:
+    enabled: true
+    primary_manager: mise            # 填软件 id，或 auto 让 AI 在阶段1选择
+    goal: "开发环境工具链尽量只装一个主管理工具，其余由它安装，减少 PATH 和目录的混乱"
+    scope: "运行时、语言工具链、包与环境管理器、命令行开发工具"
+    not_merged:                      # 默认不并入的情况
+      - "主管理工具自身（必须先独立安装）"
+      - "图形界面应用（编辑器、浏览器、办公、通讯等）"
+      - "需要系统级集成的软件（驱动、安全软件、MSVC 等 C++ 构建工具链）"
+      - "官方明确不建议被其他工具管理的软件"
+    require_evidence: true           # 判断「能否并入」必须查注册表或官方文档并附来源，不凭记忆
+    keep_only_one_way: true          # 独立安装和并入两种方案并存时，建议只保留一个
+    path_goal: "新增到 PATH 的目录尽量只有主管理工具一处；并列出整合前后的对比"
+  scan:
+    read_only: true
+    names_only: true                 # 只要软件名，不要版本
+    record_old_install_path: false   # 默认不记录旧路径；目录由阶段2重新建议
+    sources:
+      - "注册表卸载项（HKLM / HKLM-WOW6432Node / HKCU）"
+      - "开始菜单快捷方式"
+      - "Microsoft Store 应用（我要求时）"
+      - "我指定的便携软件文件夹"
+    categories: [用户软件, 运行库与依赖, 驱动与系统组件, 不确定]
+    manual_command: |
+      # 只读，只列出软件名，在 PowerShell 里运行
+      $p = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+           'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+           'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*'
+      Get-ItemProperty $p -ErrorAction SilentlyContinue |
+        Where-Object DisplayName |
+        Select-Object -ExpandProperty DisplayName |
+        Sort-Object -Unique
+  download:
+    default: "off"                   # 默认不下载，需我在阶段3末尾选择
+    save_to: "{DOWNLOAD_ROOT}"
+    naming_pattern: "{NN}_{id}.{ext}"   # NN 为清单序号，两位补零，如 01_git.exe
+    verify_checksum_if_available: true
+    on_failure: "skip_and_report"
+
+# ------------------------------------------------------------
+# software：软件清单
+#   from_scan 模式下本段由 AI 识别本机软件后生成草稿，你确认后写入；
+#   from_list 模式下由你手写。
+#
+# 字段说明（条目里省略的字段，取 software_defaults）：
+#   id            唯一标识（小写短横线）
+#   name          显示名（泛称如「浏览器」要写具体名字）
+#   note          消除同名/同类歧义，只写「这是什么、来自哪家」，不写需求说明
+#   category      留空，由 AI 在 Phase 1 填写
+#   required      true=必装 false=可选
+#   install_mode  installer / portable / package-manager
+#   path_policy   custom=可自定义安装路径 / forced_default=保持默认
+#   depends_on    前置依赖的 id 列表
+#   managed_by    由另一个软件安装和管理（填那个软件的 id，如 mise）；
+#                 不单独下载安装包，并自动视为依赖它
+#   data_paths    需要备份/迁移的配置与数据位置（AI 生成的为建议，待我确认）
+#   status        留空，由 AI 标 keep / remove / add / replace
+# ------------------------------------------------------------
+software_defaults:
+  category: ""
+  required: false
+  install_mode: installer
+  path_policy: custom
+  depends_on: []
+  managed_by: ""
+  data_paths: []
+  status: ""
+
+software:
+  # --- 网络与浏览器 ---
+  - id: clash-verge
+    name: Clash Verge
+    note: 代理客户端
+    data_paths: ["配置与订阅（含敏感链接，备份时单独保管）"]
+
+  - id: chrome
+    name: Google Chrome
+    note: 浏览器
+    data_paths: ["书签、扩展列表、账号同步设置"]
+
+  - id: rustdesk
+    name: RustDesk
+    note: 开源远程桌面与远程控制工具，支持局域网直连
+    data_paths: ["客户端配置、设备地址簿、连接设置（密钥等敏感信息单独保管）"]
+
+  # --- 网络基础设施 ---
+  - id: caddy
+    name: Caddy
+    note: 独立运行的 Web 服务器与反向代理基础设施，用于统一管理本机及局域网服务的域名与端口映射；不使用容器部署
+    install_mode: portable
+    path_policy: custom
+    data_paths: ["Caddyfile 配置文件", "Caddy 数据目录（证书及运行状态）", "服务日志"]
+  
+  # --- 文件压缩 ---
+  - id: 7zip
+    name: 7-Zip
+    note: 开源文件压缩与解压工具，支持 7z、ZIP、RAR 等格式
+    data_paths: ["文件管理器右键菜单集成设置", "软件配置"]
+  
+  # --- 开发基础 ---
+  - id: git
+    name: Git
+    note: 版本控制
+    required: true
+    data_paths: [".gitconfig", "SSH key"]
+
+  - id: lean4
+    name: Lean 4
+    note: 形式化证明语言与定理证明器；通过 Elan 管理 Lean 工具链版本，Lake 随工具链提供，用于项目构建和依赖管理；支持 CLI 独立使用，不依赖 VS Code
+    required: true
+    install_mode: installer
+    path_policy: custom
+    depends_on: [git]
+    data_paths: ["Lean 项目配置（lean-toolchain、lakefile.lean/toml、lake-manifest.json）"]
+
+  - id: powershell7
+    name: PowerShell 7
+    note: 跨平台 PowerShell（不是系统自带的 Windows PowerShell 5.1）
+    required: true
+    data_paths: ["$PROFILE 配置文件"]
+
+  - id: msvc-build-tools
+    name: Visual Studio Build Tools (MSVC)
+    note: Windows 上 Rust 编译所需的 C++ 工具链
+    required: true
+    status: add            # 模板补充的隐含依赖（建议新增），Phase 1 请确认是否采用
+
+  - id: rust
+    name: Rust 工具链
+    note: 由 mise 安装与管理，底层使用 rustup（mise 会自动安装 rustup，无需单独装）
+    required: true
+    managed_by: mise
+    depends_on: [msvc-build-tools]     # MSVC 仍需单独安装
+    data_paths: ["已安装的 toolchain 列表"]
+
+  - id: mise
+    name: mise
+    note: 多语言运行时与工具版本管理器；本清单的主管理工具，开发类工具尽量由它安装
+    required: true
+    install_mode: portable
+    data_paths: ["全局配置 config.toml"]
+
+  - id: node
+    name: Node.js
+    note: JavaScript 运行时，通过 mise 安装与管理，不单独下载安装包
+    managed_by: mise
+
+  - id: pixi
+    name: pixi
+    note: 基于 conda 生态的包与环境管理器（prefix.dev）
+    managed_by: mise
+
+  - id: bun
+    name: Bun
+    note: JavaScript 运行时与包管理器
+    managed_by: mise
+    # 提醒：bun add -g 装的全局包在 ~/.bun/bin，不在 mise 管理的 PATH 里；
+    # 需要全局命令行工具时，建议改用 mise 的 npm 后端安装
+
+  - id: zed
+    name: Zed
+    note: 代码编辑器
+    data_paths: ["settings.json", "keymap", "扩展列表"]
+
+  # --- 架构设计与可视化 ---
+  - id: openflowkit
+    name: OpenFlowKit
+    note: 开源、本地优先的技术架构图与可视化画布，支持 Mermaid、D2、Structurizr、OpenFlow DSL、GitHub 仓库架构映射及 MCP Agent 集成
+    install_mode: package-manager
+    path_policy: custom
+    data_paths: ["浏览器本地存储的图表与文档", ".ofk 架构图文件", ".openflow.json 文档"]
+  
+  # --- 效率与笔记 ---
+  - id: mdm
+    name: Mister Download Manager (MDM)
+    note: 开源下载管理器，支持多连接分段下载、断点续传、浏览器集成、视频下载（yt-dlp）、BT 与磁力链接
+
+  - id: dsh
+    name: DeepSeek Harness
+    note: 缩写 dsh，全称 DeepSeek Harness
+
+  - id: siyuan
+    name: 思源笔记 (SiYuan)
+    note: 本地优先的笔记软件
+    data_paths: ["工作空间目录（笔记数据，迁移前务必备份）"]
+
+  - id: pixpin
+    name: PixPin
+    note: 截图与贴图工具
+    data_paths: ["设置与历史记录"]
+
+  # --- 办公与通讯 ---
+  - id: wechat
+    name: 微信 (WeChat)
+    note: 桌面版微信
+    path_policy: forced_default
+    data_paths: ["聊天记录目录（迁移前先备份）"]
+
+  - id: wps
+    name: WPS Office
+    note: 办公套件
+
+  # --- 安全 ---
+  - id: huorong
+    name: 火绒安全
+    note: 杀毒软件
+    path_policy: forced_default     # 安全软件通常建议默认路径，Phase 1 请核实
+
+  - id: pecofence
+    name: pecofence
+    note: 开源的桌面整理与分类工具
+
+
+  # --- 系统维护 ---
+  - id: geek-uninstaller
+    name: Geek Uninstaller
+    note: Windows 软件卸载工具，支持深度扫描卸载残留、强制卸载及 Microsoft Store 应用卸载
+
