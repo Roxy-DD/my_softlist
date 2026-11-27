@@ -400,14 +400,24 @@ software:
     name: PureRef
     note: 参考图像整理与展示工具，可将图片集中到自由排布的参考画布中
 
-  # --- 数据库管理 ---
-  - id: dbeaver
-    name: DBeaver Community
-    note: Apache-2.0 开源的跨平台通用数据库客户端，基于 JDBC 支持大量关系型数据库，提供 SQL 编辑、数据浏览与 ER 图等功能
-
   - id: navicat-premium
     name: Navicat Premium
     note: 商业化跨平台数据库管理工具，统一连接和管理多种关系型及部分 NoSQL 数据库，支持数据传输与同步
+
+  # --- 思维与知识组织 ---
+  - id: xmind
+    name: XMind
+    note: 思维导图工具，用于想法组织、知识结构化与项目规划
+
+  # --- 图表与可视化 ---
+  - id: drawio
+    name: draw.io
+    note: 开源图表绘制工具，支持流程图、软件架构图、UML、ER 图与网络拓扑图
+
+  # --- 文档编辑 ---
+  - id: typora
+    name: Typora
+    note: 商业 Markdown 所见即所得编辑器，支持数学公式、代码高亮、Mermaid 图表与文档导出
 
   # --- 办公与通讯 ---
   - id: wechat
