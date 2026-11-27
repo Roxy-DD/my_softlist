@@ -357,6 +357,16 @@ software:
     name: 沙拉翻译 (Saladict)
     note: 跨平台划词翻译软件，支持输入翻译、剪切板监听、截图 OCR 与截图翻译，可接入多种翻译服务
 
+  # --- 媒体播放 ---
+  - id: potplayer
+    name: PotPlayer
+    note: Windows 多媒体播放器，支持本地音视频播放及字幕管理
+
+  # --- 设计与素材管理 ---
+  - id: pureref
+    name: PureRef
+    note: 参考图像整理与展示工具，可将图片集中到自由排布的参考画布中
+
   # --- 办公与通讯 ---
   - id: wechat
     name: 微信 (WeChat)
