@@ -273,6 +273,11 @@ software:
     name: Everything
     note: voidtools 开发的 Windows 本地文件名搜索工具；免费专有软件（Freeware），非开源；通过 NTFS MFT 建立索引并利用 USN Journal 监控文件系统变更
 
+  # --- 磁盘空间分析 ---
+  - id: wiztree
+    name: WizTree
+    note: Windows 磁盘空间分析工具；个人使用免费、商业使用需授权；通过读取 NTFS MFT 快速统计文件与目录占用，非开源
+
   # --- 文件压缩 ---
   - id: 7zip
     name: 7-Zip
