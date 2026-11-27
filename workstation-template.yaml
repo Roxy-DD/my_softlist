@@ -330,6 +330,11 @@ software:
     note: Microsoft 开源代码编辑器，支持扩展、调试与集成终端
     data_paths: ["用户设置、快捷键、扩展列表、代码片段"]
 
+  # --- 终端与远程连接 ---
+  - id: tabby
+    name: Tabby
+    note: MIT 开源的跨平台终端与远程连接客户端，支持 SSH、Telnet、串口、分屏及 SFTP
+
   # --- 架构设计与可视化 ---
   - id: openflowkit
     name: OpenFlowKit
@@ -362,10 +367,24 @@ software:
     name: 沙拉翻译 (Saladict)
     note: 跨平台划词翻译软件，支持输入翻译、剪切板监听、截图 OCR 与截图翻译，可接入多种翻译服务
 
+  # --- 媒体处理 ---
+  - id: shanaencoder
+    name: ShanaEncoder
+    note: 韩国开发的免费音视频编码与转码工具，基于 FFmpeg；软件本身为免费软件而非开源项目
+
   # --- 媒体播放 ---
   - id: potplayer
     name: PotPlayer
     note: Windows 多媒体播放器，支持本地音视频播放及字幕管理
+
+  # --- 三维设计与电子工程 ---
+  - id: autodesk-fusion
+    name: Autodesk Fusion
+    note: Autodesk 的集成式三维 CAD/CAM/CAE 与 PCB 设计软件（原 Fusion 360）
+
+  - id: kicad
+    name: KiCad
+    note: 开源电子设计自动化（EDA）软件，支持原理图设计与 PCB 布局
 
   # --- 设计与素材管理 ---
   - id: pureref
