@@ -268,6 +268,11 @@ software:
     name: Syncthing
     note: 免费开源的跨平台点对点文件同步工具，可在多台设备间自动同步文件夹
 
+  # --- 文件搜索 ---
+  - id: everything
+    name: Everything
+    note: voidtools 开发的 Windows 本地文件名搜索工具；免费专有软件（Freeware），非开源；通过 NTFS MFT 建立索引并利用 USN Journal 监控文件系统变更
+
   # --- 文件压缩 ---
   - id: 7zip
     name: 7-Zip
