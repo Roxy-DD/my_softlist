@@ -325,6 +325,11 @@ software:
     note: 代码编辑器
     data_paths: ["settings.json", "keymap", "扩展列表"]
 
+  - id: vscode
+    name: Visual Studio Code
+    note: Microsoft 开源代码编辑器，支持扩展、调试与集成终端
+    data_paths: ["用户设置、快捷键、扩展列表、代码片段"]
+
   # --- 架构设计与可视化 ---
   - id: openflowkit
     name: OpenFlowKit
