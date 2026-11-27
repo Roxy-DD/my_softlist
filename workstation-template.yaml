@@ -383,6 +383,10 @@ software:
     note: 开源的 3D 打印切片软件，支持模型切片、打印参数配置与多种 3D 打印机工作流
 
   # --- 三维设计与电子工程 ---
+  - id: freecad
+    name: FreeCAD
+    note: LGPL 开源的跨平台参数化三维 CAD 建模软件，面向机械设计、产品设计、工程制图与 3D 打印
+
   - id: autodesk-fusion
     name: Autodesk Fusion
     note: Autodesk 的集成式三维 CAD/CAM/CAE 与 PCB 设计软件（原 Fusion 360）
@@ -395,6 +399,15 @@ software:
   - id: pureref
     name: PureRef
     note: 参考图像整理与展示工具，可将图片集中到自由排布的参考画布中
+
+  # --- 数据库管理 ---
+  - id: dbeaver
+    name: DBeaver Community
+    note: Apache-2.0 开源的跨平台通用数据库客户端，基于 JDBC 支持大量关系型数据库，提供 SQL 编辑、数据浏览与 ER 图等功能
+
+  - id: navicat-premium
+    name: Navicat Premium
+    note: 商业化跨平台数据库管理工具，统一连接和管理多种关系型及部分 NoSQL 数据库，支持数据传输与同步
 
   # --- 办公与通讯 ---
   - id: wechat
