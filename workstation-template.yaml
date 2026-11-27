@@ -254,6 +254,20 @@ software:
     path_policy: custom
     data_paths: ["Caddyfile 配置文件", "Caddy 数据目录（证书及运行状态）", "服务日志"]
   
+  # --- 网络分析 ---
+  - id: wireshark
+    name: Wireshark
+    note: 开源网络协议分析器，用于捕获和检查网络数据包、排查网络通信问题
+
+  # --- 文件传输与同步 ---
+  - id: localsend
+    name: LocalSend
+    note: 免费开源的跨平台局域网文件传输工具，无需账号，可在 Windows、macOS、Linux、Android 和 iOS 设备间发送文件
+
+  - id: syncthing
+    name: Syncthing
+    note: 免费开源的跨平台点对点文件同步工具，可在多台设备间自动同步文件夹
+
   # --- 文件压缩 ---
   - id: 7zip
     name: 7-Zip
@@ -442,6 +456,10 @@ software:
 
 
   # --- 系统维护 ---
+  - id: powertoys
+    name: Microsoft PowerToys
+    note: 微软开发的免费开源 Windows 系统增强工具集，包含窗口布局、快速启动、批量重命名、文件预览、OCR 文本提取和文件占用排查等功能
+
   - id: geek-uninstaller
     name: Geek Uninstaller
     note: Windows 软件卸载工具，支持深度扫描卸载残留、强制卸载及 Microsoft Store 应用卸载
