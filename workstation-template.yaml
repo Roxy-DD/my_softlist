@@ -377,6 +377,11 @@ software:
     name: PotPlayer
     note: Windows 多媒体播放器，支持本地音视频播放及字幕管理
 
+  # --- 3D 打印 ---
+  - id: orcaslicer
+    name: OrcaSlicer
+    note: 开源的 3D 打印切片软件，支持模型切片、打印参数配置与多种 3D 打印机工作流
+
   # --- 三维设计与电子工程 ---
   - id: autodesk-fusion
     name: Autodesk Fusion
